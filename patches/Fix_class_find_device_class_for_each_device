@@ -1,0 +1,24 @@
+Revert changes in 2.6.26 for class_find_devic() and class_for_each_device()
+
+Index: standalone/drivers/isdn/mISDN/core.c
+===================================================================
+--- standalone.orig/drivers/isdn/mISDN/core.c
++++ standalone/drivers/isdn/mISDN/core.c
+@@ -186,7 +186,7 @@ _get_mdevice(struct device *dev, void *i
+ struct mISDNdevice
+ *get_mdevice(u_int id)
+ {
+-	return dev_to_mISDN(class_find_device(&mISDN_class, NULL, &id,
++	return dev_to_mISDN(class_find_device(&mISDN_class, &id,
+ 					      _get_mdevice));
+ }
+ 
+@@ -202,7 +202,7 @@ get_mdevice_count(void)
+ {
+ 	int cnt = 0;
+ 
+-	class_for_each_device(&mISDN_class, NULL, &cnt, _get_mdevice_count);
++	class_for_each_device(&mISDN_class, &cnt, _get_mdevice_count);
+ 	return cnt;
+ }
+ 

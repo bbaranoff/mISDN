@@ -1,0 +1,57 @@
+commit b5d5843a1dd0031d63d9d9484346d86eae9cab3b
+Author: Akinobu Mita <akinobu.mita@gmail.com>
+Date:   Fri Jan 27 04:24:55 2012 +0000
+
+    mISDN: use memchr_inv
+    
+    Use memchr_inv to check if the data contains all same bytes.  It is
+    faster than looping for each byte.
+    
+    Signed-off-by: Akinobu Mita <akinobu.mita@gmail.com>
+    Cc: Karsten Keil <isdn@linux-pingi.de>
+    Cc: netdev@vger.kernel.org
+    Signed-off-by: David S. Miller <davem@davemloft.net>
+
+Index: standalone/drivers/isdn/mISDN/l1oip_core.c
+===================================================================
+--- standalone.orig/drivers/isdn/mISDN/l1oip_core.c
++++ standalone/drivers/isdn/mISDN/l1oip_core.c
+@@ -1112,7 +1112,7 @@ handle_bmsg(struct mISDNchannel *ch, str
+ 	struct l1oip			*hc = bch->hw;
+ 	int			ret = -EINVAL;
+ 	struct mISDNhead	*hh = mISDN_HEAD_P(skb);
+-	int			l, ll;
++	int			l, ll, i;
+ 	unsigned char		*p;
+ 
+ 	switch (hh->prim) {
+@@ -1128,8 +1128,13 @@ handle_bmsg(struct mISDNchannel *ch, str
+ 			break;
+ 		}
+ 		/* check for AIS / ulaw-silence */
++		p = skb->data;
+ 		l = skb->len;
+-		if (!memchr_inv(skb->data, 0xff, l)) {
++		for (i = 0; i < l; i++) {
++			if (*p++ != 0xff)
++				break;
++		}
++		if (i == l) {
+ 			if (debug & DEBUG_L1OIP_MSG)
+ 				printk(KERN_DEBUG "%s: got AIS, not sending, "
+ 				       "but counting\n", __func__);
+@@ -1139,8 +1144,13 @@ handle_bmsg(struct mISDNchannel *ch, str
+ 			return 0;
+ 		}
+ 		/* check for silence */
++		p = skb->data;
+ 		l = skb->len;
+-		if (!memchr_inv(skb->data, 0x2a, l)) {
++		for (i = 0; i < l; i++) {
++			if (*p++ != 0x2a)
++				break;
++		}
++		if (i == l) {
+ 			if (debug & DEBUG_L1OIP_MSG)
+ 				printk(KERN_DEBUG "%s: got silence, not sending"
+ 				       ", but counting\n", __func__);

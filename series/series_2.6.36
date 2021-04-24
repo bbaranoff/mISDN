@@ -1,0 +1,4 @@
+#include series_2.6.37
+linux-2.6.git-0d26aa704e5bbca5a1ee9fdf0d02277ceb507eee.patch
+linux-2.6.git-1ac4594d88f63ba1557cc1a30ec1f915ca55b7cb.patch
+Add_pr_warn.patch

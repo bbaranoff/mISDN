@@ -1,0 +1,5 @@
+#include series_2.6.20
+Revert_2.6.20_changes
+linux-2.6.git-b8176a3f7a4e54a3338535e8c6086713d1c0b804_vd1.patch
+linux-2.6.git-d930d1a142af07f25c5cbf33aeea6ebbd25315ce_vd2.patch
+linux-2.6.git-9db9f279be5e663ae0de8b3349f07b38b18e9215_vd3.patch

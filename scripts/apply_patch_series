@@ -1,0 +1,38 @@
+#!/bin/bash
+#
+# little helper to apply a series file
+#
+# call with apply_patch_series <series file>
+#
+if [ $# -lt 1 ]; then
+	echo "usage: $0 <series file>"
+	exit
+fi
+
+series=$1
+shift
+rm -f .patchOK
+while read -r pname popt ; do
+	res=0
+	if [ -z "$pname" ]; then
+		echo "Ignore empty line"
+		continue
+	elif [ "${pname:0:1}" != "#" ]; then
+		echo "Apply $pname : opts=$popt from series ${series}"
+		$PATCH -p1 $popt < patches/${pname}
+		res=$?
+		if [ $res -ne 0 ]; then
+			echo "Error on $PATCH -p1 $popt < patches/${pname} in series ${series}"
+			exit 1
+		fi
+	elif [ "${pname}" = "#include" ]; then
+		echo "Include series ${popt}" 
+		../scripts/apply_patch_series ../series/${popt}
+		res=$?
+		if [ $res -ne 0 ]; then
+			exit 1
+		fi
+		rm -f .patchOK
+	fi
+done < <(cat $series)
+echo "All patches OK" > .patchOK

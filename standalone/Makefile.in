@@ -1,0 +1,173 @@
+
+BASEDIR := $(shell pwd)
+
+INSTALL_PREFIX := $(INSTALL_MOD_PATH)
+export INSTALL_PREFIX
+
+#PATH to linux source/headers
+#LINUX=/usr/src/linux
+
+LINUX := @KERNEL_BUILD_DIR@
+LINUX_SOURCE := @KERNEL_SOURCE_DIR@
+KVERSION := @KVERSION@
+
+SDIRS := $(filter-out %.tmp_versions,$(shell $(FIND) ../drivers/isdn -type d -print))
+SDIRS += $(filter-out %.tmp_versions,$(shell $(FIND) ../include/ -type d -print))
+TDIRS := $(SDIRS:../%=%)
+IFILES := $(shell $(FIND) ../include/linux -name '*.h' -print)
+SFILES := $(shell $(FIND) ../drivers/isdn -name '*.[ch]' -print)
+#SFILES := ../drivers/isdn/mISDN/core.c drivers/isdn/mISDN/tei.c ./drivers/isdn/mISDN/core.h
+TFILES := $(SFILES:../%=%)
+NIFILES := $(IFILES:../%.h=%_s.h)
+HFILES := $(IFILES:../include/%.h=%)
+MFILES := $(shell $(FIND) ../drivers/isdn -name 'Makefile' -print)
+NMFILES := $(MFILES:../%=%)
+MISDN_DEFINES=$(shell ../scripts/find_CONFIG_MISDN ../drivers)
+KCONFIGS := $(shell $(FIND) ../drivers -name 'Kconfig' -print)
+
+MISDN_DEFINES_M := $(MISDN_DEFINES:%=_M%)
+
+export MISDN_DEFINES_M
+
+misdn.configs: $(KCONFIGS)
+	@-rm -f $@_
+	@for c in $(MISDN_DEFINES); do \
+		echo $$c >> $@_; \
+	done
+	@$(SORT) -r $@_ > $@
+	@-rm -f $@_
+
+
+$(TDIRS):
+	mkdir -p $@
+
+$(NMFILES): % : ../% misdn.sed
+	@echo preparing $@
+	@echo "# special rules for standalone" > $@
+	@echo "EXTRA_CFLAGS += -I\$$(MISDN_INC)"  >> $@
+	@echo "EXTRA_CFLAGS += \$$(MISDN_CFLAGS)" >> $@
+	@$(SED)  -f misdn.sed $< >> $@
+	
+
+$(NIFILES): %_s.h : ../%.h misdn.sed
+	@echo preparing $@
+	@$(SED)  -f misdn.sed $< > $@__
+	@if diff -q $< $@__ >/dev/null; then \
+		cp  $< $@;\
+	else \
+		cp $@__ $@; \
+	fi
+	@rm -f $@__
+
+$(TFILES): misdn.sed
+
+$(TFILES): % : ../%
+	@echo preparing $@
+	@$(SED)  -f misdn.sed $< > $@__
+	@if diff -q $< $@__ >/dev/null; then \
+		cp  $< $@;\
+	else \
+		cp $@__ $@; \
+	fi
+	@rm -f $@__
+
+misdn.sed: $(KCONFIGS) $(IFILES) misdn.configs
+	@echo preparing $@
+	@-rm -f $@
+	
+	@for i in $(HFILES); do \
+		echo "s%#include <$${i}.h>%#include <$${i}_s.h>%g">>$@; \
+	done
+	@XXX=0; \
+	for i in $(shell cat misdn.configs); do \
+		XXX=`expr $$XXX \+ 1`; \
+		echo "s%$$i%_Mxxxxx__$${XXX}__%g">>$@; \
+	done
+	@XXX=0; \
+	for i in $(shell cat misdn.configs); do \
+		XXX=`expr $$XXX \+ 1`; \
+		echo "s%_Mxxxxx__$${XXX}__%_M$$i%g">>$@; \
+	done
+
+btree: misdn.sed $(TDIRS) $(TFILES) $(NIFILES) $(NMFILES)
+
+mISDN.cfg: ../mISDN.cfg.default
+	@if test -f $@ ; then \
+		echo "$? newer as $@ please check"; \
+		exit 1; \
+	else \
+		cp $< $@; \
+	fi
+
+check_mISDN_cfg: mISDN.cfg ../scripts/check_mISDN_cfg
+	@../scripts/check_mISDN_cfg mISDN.cfg $(MISDN_DEFINES)
+	-rm -f mISDN.cfg.D
+	-rm -f mISDN.cfg.M
+	@for i in $(MISDN_DEFINES); do \
+		if grep "^$$i" mISDN.cfg >>/dev/null; then \
+			echo "enable $$i"; \
+			echo "-D_M$$i" >>mISDN.cfg.D; \
+			echo "_M$$i=m" >>mISDN.cfg.M; \
+		else \
+			echo "disable $$i"; \
+		fi \
+	done
+
+clean_tree:
+	rm -rf drivers include series .pc
+
+distclean: clean clean_tree
+	rm -f Makefile
+
+clean:
+	rm -f *~ misdn.sed misdn.configs mISDN.cfg.D mISDN.cfg.M modules
+
+MISDNDIR := $(BASEDIR)
+
+MISDN_SRC := $(MISDNDIR)/drivers/isdn/hardware/mISDN
+MISDN_CORE_SRC := $(MISDNDIR)/drivers/isdn/mISDN
+
+
+patched_tree: unpatched_tree
+	if test -f series -a ! -f patched; then \
+		../scripts/apply_patch_series series; \
+		touch patched; \
+	else \
+		echo "no series found"; \
+		echo "no series found" > .patchOK; \
+	fi
+	cat .patchOK
+
+unpatched_tree: clean_tree
+	$(MAKE) btree
+	rm -f patched
+	if test -f ../series/series_$(KVERSION); then \
+		cp ../series/series_$(KVERSION) series; \
+	else \
+		echo "no series for kernel version $(KVERSION)"; \
+	fi
+
+quilt_tree: unpatched_tree
+	quilt push -a
+
+modules_:
+	-rm -f modules 
+	export MISDN_INC=$(MISDNDIR)/include; export MISDN_CFLAGS="$(shell cat mISDN.cfg.D)"; $(MAKE) -C $(LINUX)  $(shell cat mISDN.cfg.M) M=$(MISDN_CORE_SRC) modules
+	cp $(MISDN_CORE_SRC)/Module.symvers $(MISDN_SRC)
+	export MISDN_INC=$(MISDNDIR)/include; export MISDN_CFLAGS="$(shell cat mISDN.cfg.D)"; $(MAKE) -C $(LINUX) $(shell cat mISDN.cfg.M) M=$(MISDN_SRC) modules  
+	touch modules
+
+
+modules: patched_tree misdn.sed check_mISDN_cfg
+	$(MAKE) modules_
+
+uninstall:
+	export MISDNDIR=$(MISDNDIR); uninstall
+
+modules_install:
+	$(MAKE) -C $(LINUX) INSTALL_MOD_PATH=$(INSTALL_PREFIX) SUBDIRS=$(MISDN_CORE_SRC) $@
+	$(MAKE) -C $(LINUX) INSTALL_MOD_PATH=$(INSTALL_PREFIX) SUBDIRS=$(MISDN_SRC) $@
+
+
+.PHONY: btree modules_install check_mISDN_cfg patched_tree clean_tree unpatched_tree new_tree modules_ quilt_tree
+

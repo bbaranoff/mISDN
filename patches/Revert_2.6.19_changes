@@ -1,0 +1,199 @@
+Index: standalone/drivers/isdn/hardware/mISDN/avmfritz.c
+===================================================================
+--- standalone.orig/drivers/isdn/hardware/mISDN/avmfritz.c
++++ standalone/drivers/isdn/hardware/mISDN/avmfritz.c
+@@ -630,7 +630,7 @@ HDLC_irq_main(struct fritzcard *fc)
+ }
+ 
+ static irqreturn_t
+-avm_fritz_interrupt(int intno, void *dev_id)
++avm_fritz_interrupt(int intno, void *dev_id, struct pt_regs *regs)
+ {
+ 	struct fritzcard *fc = dev_id;
+ 	u8 val;
+@@ -657,7 +657,7 @@ avm_fritz_interrupt(int intno, void *dev
+ }
+ 
+ static irqreturn_t
+-avm_fritzv2_interrupt(int intno, void *dev_id)
++avm_fritzv2_interrupt(int intno, void *dev_id, struct pt_regs *regs)
+ {
+ 	struct fritzcard *fc = dev_id;
+ 	u8 val;
+Index: standalone/drivers/isdn/hardware/mISDN/hfcmulti.c
+===================================================================
+--- standalone.orig/drivers/isdn/hardware/mISDN/hfcmulti.c
++++ standalone/drivers/isdn/hardware/mISDN/hfcmulti.c
+@@ -2695,7 +2695,7 @@ fifo_irq(struct hfc_multi *hc, int block
+ int irqsem;
+ #endif
+ static irqreturn_t
+-hfcmulti_interrupt(int intno, void *dev_id)
++hfcmulti_interrupt(int intno, void *dev_id, struct pt_regs *regs)
+ {
+ #ifdef IRQCOUNT_DEBUG
+ 	static int iq1 = 0, iq2 = 0, iq3 = 0, iq4 = 0,
+Index: standalone/drivers/isdn/hardware/mISDN/hfcpci.c
+===================================================================
+--- standalone.orig/drivers/isdn/hardware/mISDN/hfcpci.c
++++ standalone/drivers/isdn/hardware/mISDN/hfcpci.c
+@@ -1153,7 +1153,7 @@ tx_dirq(struct dchannel *dch)
+ }
+ 
+ static irqreturn_t
+-hfcpci_int(int intno, void *dev_id)
++hfcpci_int(int intno, void *dev_id, struct pt_regs *regs)
+ {
+ 	struct hfc_pci	*hc = dev_id;
+ 	u_char		exval;
+Index: standalone/drivers/isdn/hardware/mISDN/mISDNinfineon.c
+===================================================================
+--- standalone.orig/drivers/isdn/hardware/mISDN/mISDNinfineon.c
++++ standalone/drivers/isdn/hardware/mISDN/mISDNinfineon.c
+@@ -288,7 +288,7 @@ IOFUNC_MEMIO(ISAC, inf_hw, u32, isac.a.p
+ IOFUNC_MEMIO(IPAC, inf_hw, u32, hscx.a.p)
+ 
+ static irqreturn_t
+-diva_irq(int intno, void *dev_id)
++diva_irq(int intno, void *dev_id, struct pt_regs *regs)
+ {
+ 	struct inf_hw *hw = dev_id;
+ 	u8 val;
+@@ -306,7 +306,7 @@ diva_irq(int intno, void *dev_id)
+ }
+ 
+ static irqreturn_t
+-diva20x_irq(int intno, void *dev_id)
++diva20x_irq(int intno, void *dev_id, struct pt_regs *regs)
+ {
+ 	struct inf_hw *hw = dev_id;
+ 	u8 val;
+@@ -325,7 +325,7 @@ diva20x_irq(int intno, void *dev_id)
+ }
+ 
+ static irqreturn_t
+-tiger_irq(int intno, void *dev_id)
++tiger_irq(int intno, void *dev_id, struct pt_regs *regs)
+ {
+ 	struct inf_hw *hw = dev_id;
+ 	u8 val;
+@@ -343,7 +343,7 @@ tiger_irq(int intno, void *dev_id)
+ }
+ 
+ static irqreturn_t
+-elsa_irq(int intno, void *dev_id)
++elsa_irq(int intno, void *dev_id, struct pt_regs *regs)
+ {
+ 	struct inf_hw *hw = dev_id;
+ 	u8 val;
+@@ -361,7 +361,7 @@ elsa_irq(int intno, void *dev_id)
+ }
+ 
+ static irqreturn_t
+-niccy_irq(int intno, void *dev_id)
++niccy_irq(int intno, void *dev_id, struct pt_regs *regs)
+ {
+ 	struct inf_hw *hw = dev_id;
+ 	u32 val;
+@@ -380,7 +380,7 @@ niccy_irq(int intno, void *dev_id)
+ }
+ 
+ static irqreturn_t
+-gazel_irq(int intno, void *dev_id)
++gazel_irq(int intno, void *dev_id, struct pt_regs *regs)
+ {
+ 	struct inf_hw *hw = dev_id;
+ 	irqreturn_t ret;
+@@ -392,7 +392,7 @@ gazel_irq(int intno, void *dev_id)
+ }
+ 
+ static irqreturn_t
+-ipac_irq(int intno, void *dev_id)
++ipac_irq(int intno, void *dev_id, struct pt_regs *regs)
+ {
+ 	struct inf_hw *hw = dev_id;
+ 	u8 val;
+Index: standalone/drivers/isdn/hardware/mISDN/netjet.c
+===================================================================
+--- standalone.orig/drivers/isdn/hardware/mISDN/netjet.c
++++ standalone/drivers/isdn/hardware/mISDN/netjet.c
+@@ -686,7 +686,7 @@ send_tiger(struct tiger_hw *card, u8 irq
+ }
+ 
+ static irqreturn_t
+-nj_irq(int intno, void *dev_id)
++nj_irq(int intno, void *dev_id, struct pt_regs *regs)
+ {
+ 	struct tiger_hw *card = dev_id;
+ 	u8 val, s1val, s0val;
+Index: standalone/drivers/isdn/hardware/mISDN/speedfax.c
+===================================================================
+--- standalone.orig/drivers/isdn/hardware/mISDN/speedfax.c
++++ standalone/drivers/isdn/hardware/mISDN/speedfax.c
+@@ -112,7 +112,6 @@ set_debug(const char *val, struct kernel
+ MODULE_AUTHOR("Karsten Keil");
+ MODULE_LICENSE("GPL v2");
+ MODULE_VERSION(SPEEDFAX_REV);
+-MODULE_FIRMWARE("isdn/ISAR.BIN");
+ module_param_call(debug, set_debug, param_get_uint, &debug, S_IRUGO | S_IWUSR);
+ MODULE_PARM_DESC(debug, "Speedfax debug mask");
+ module_param(irqloops, uint, S_IRUGO | S_IWUSR);
+@@ -122,7 +121,7 @@ IOFUNC_IND(ISAC, sfax_hw, p_isac)
+ IOFUNC_IND(ISAR, sfax_hw, p_isar)
+ 
+ static irqreturn_t
+-speedfax_irq(int intno, void *dev_id)
++speedfax_irq(int intno, void *dev_id, struct pt_regs *regs)
+ {
+ 	struct sfax_hw	*sf = dev_id;
+ 	u8 val;
+Index: standalone/drivers/isdn/hardware/mISDN/w6692.c
+===================================================================
+--- standalone.orig/drivers/isdn/hardware/mISDN/w6692.c
++++ standalone/drivers/isdn/hardware/mISDN/w6692.c
+@@ -784,7 +784,7 @@ W6692B_interrupt(struct w6692_hw *card,
+ }
+ 
+ static irqreturn_t
+-w6692_irq(int intno, void *dev_id)
++w6692_irq(int intno, void *dev_id, struct pt_regs *regs)
+ {
+ 	struct w6692_hw	*card = dev_id;
+ 	u8		ista;
+Index: standalone/drivers/isdn/hardware/mISDN/xhfc_su.c
+===================================================================
+--- standalone.orig/drivers/isdn/hardware/mISDN/xhfc_su.c
++++ standalone/drivers/isdn/hardware/mISDN/xhfc_su.c
+@@ -1794,7 +1794,7 @@ xhfc_bh_handler(unsigned long ul_hw)
+  * Interrupt handler
+  */
+ irqreturn_t
+-xhfc_interrupt(int intno, void *dev_id)
++xhfc_interrupt(int intno, void *dev_id, struct pt_regs *regs)
+ {
+ 	struct xhfc_pi *pi = dev_id;
+ 	struct xhfc *xhfc = NULL;
+Index: standalone/drivers/isdn/hardware/mISDN/xhfc_su.h
+===================================================================
+--- standalone.orig/drivers/isdn/hardware/mISDN/xhfc_su.h
++++ standalone/drivers/isdn/hardware/mISDN/xhfc_su.h
+@@ -198,6 +198,6 @@ int setup_instance(struct xhfc *hw, stru
+ int release_instance(struct xhfc *hw);
+ void enable_interrupts(struct xhfc *xhfc);
+ void disable_interrupts(struct xhfc *xhfc);
+-irqreturn_t xhfc_interrupt(int intno, void *dev_id);
++irqreturn_t xhfc_interrupt(int intno, void *dev_id, struct pt_regs *regs);
+ 
+ #endif /* _XHFC_SU_H_ */
+Index: standalone/include/linux/mISDNif_s.h
+===================================================================
+--- standalone.orig/include/linux/mISDNif_s.h
++++ standalone/include/linux/mISDNif_s.h
+@@ -22,6 +22,7 @@
+ #include <linux/types.h>
+ #include <linux/errno.h>
+ #include <linux/socket.h>
++#include <stdbool.h>
+ 
+ /*
+  * ABI Version 32 bit

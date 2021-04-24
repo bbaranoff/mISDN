@@ -1,0 +1,28 @@
+From bc10502dba37d3b210efd9f3867212298f13b78e Mon Sep 17 00:00:00 2001
+From: Eric Dumazet <eric.dumazet@gmail.com>
+Date: Thu, 3 Jun 2010 03:21:52 -0700
+Subject: [PATCH] net: use __packed annotation
+
+From mainline
+cleanup patch.
+
+Use new __packed annotation in net/ and include/
+(except netfilter)
+
+Signed-off-by: Eric Dumazet <eric.dumazet@gmail.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+
+Index: standalone/include/linux/mISDNif_s.h
+===================================================================
+--- standalone.orig/include/linux/mISDNif_s.h
++++ standalone/include/linux/mISDNif_s.h
+@@ -256,7 +256,7 @@
+ struct mISDNhead {
+ 	unsigned int	prim;
+ 	unsigned int	id;
+-}  __packed;
++}  __attribute__((packed));
+ 
+ #define MISDN_HEADER_LEN	sizeof(struct mISDNhead)
+ #define MAX_DATA_SIZE		2048

@@ -1,0 +1,32 @@
+From 0d26aa704e5bbca5a1ee9fdf0d02277ceb507eee Mon Sep 17 00:00:00 2001
+From: Tejun Heo <tj@kernel.org>
+Date: Fri, 24 Dec 2010 15:59:07 +0100
+Subject: [PATCH] mISDN: don't use flush_scheduled_work()
+
+From mainline
+
+flush_scheduled_work() is deprecated and scheduled to be removed.
+Directly flush ch->workq when freeing channel and cancel it on
+release.
+
+Signed-off-by: Tejun Heo <tj@kernel.org>
+Cc: Karsten Keil <isdn@linux-pingi.de>
+Cc: netdev@vger.kernel.org
+---
+ drivers/isdn/mISDN/hwchannel.c  |    4 ++--
+ drivers/isdn/mISDN/l1oip_core.c |    2 ++
+ 2 files changed, 4 insertions(+), 2 deletions(-)
+
+Index: standalone/drivers/isdn/mISDN/hwchannel.c
+===================================================================
+--- standalone.orig/drivers/isdn/mISDN/hwchannel.c
++++ standalone/drivers/isdn/mISDN/hwchannel.c
+@@ -116,7 +116,7 @@ mISDN_freedchannel(struct dchannel *ch)
+ 	}
+ 	skb_queue_purge(&ch->squeue);
+ 	skb_queue_purge(&ch->rqueue);
+-	flush_work_sync(&ch->workq);
++	flush_scheduled_work();
+ 	return 0;
+ }
+ EXPORT_SYMBOL(mISDN_freedchannel);
